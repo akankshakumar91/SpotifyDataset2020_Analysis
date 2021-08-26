@@ -181,11 +181,81 @@ ALTER TABLE public."Spotify2020"
 ALTER COLUMN "Valence" TYPE real
 USING "Valence"::real;
 
+ALTER TABLE public."Spotify2020"
+ALTER COLUMN "Release Date" TYPE DATE
+USING TO_DATE("Release Date", 'MM/DD/YY');
+
 commit;
 
 -- QUERIES --------------
 
+-- Artist
+SELECT count(DISTINCT "Artist")
+from public."Spotify2020"; --total unique artists --712
+
+SELECT count(DISTINCT "Artist")
+from public."Spotify2020"
+where "Artist" NOT LIKE '%,%'; --individual artist --387
+
+-- Songs
+SELECT count(DISTINCT "Song ID")
+from public."Spotify2020"; --total unique songs -- 1516
 
 
-SELECT 
+-- Top Songs
+SELECT "Song Name", "Artist", "Streams"
+from public."Spotify2020"
+order by "Streams" DESC
+LIMIT 10; -- by highest streams
+
+-- Top Artists by highest Streams
+SELECT SUM("Streams") as CumStream, "Artist"
+from public."Spotify2020"
+GROUP BY "Artist"
+ORDER BY CumStream DESC
+LIMIT 10;
+
+-- Ranking all songs by Top Highly Streamed Artists
+SELECT "Artist",
+	RANK() OVER(PARTITION BY "Artist" ORDER BY "Streams" DESC) as "RankStream",
+	"Song Name", "Streams",
+	SUM("Streams") OVER(PARTITION BY "Artist" ORDER BY "Streams" DESC) as RunningTotal
+from public."Spotify2020"
+WHERE "Artist" IN (SELECT "Artist" from public."Spotify2020" 
+				  GROUP BY "Artist" ORDER BY SUM("Streams") DESC
+				  LIMIT 10);
+
+
+-- Songs released by artists IN 2020
+SELECT  DISTINCT "Artist"
+	,COUNT("Song ID") OVER(PARTITION BY "Artist") as NoOfSongs
+from public."Spotify2020"
+WHERE "Artist" NOT LIKE '%,%'
+order by NoOfSongs desc
+LIMIT 10;
+--- can also be written as:
+SELECT "Artist", COUNT("Song ID") as NoOfSongs
+from public."Spotify2020"
+GROUP BY "Artist"
+ORDER BY NoOfSongs DESC
+LIMIT 10;
+
+-- Artists with highest followers at any time in 2020
+SELECT DISTINCT "Artist"
+	,MAX("Artist Followers") OVER(PARTITION BY "Artist") as HighFollowers
+from public."Spotify2020"
+WHERE "Artist" NOT LIKE '%,%'
+order by HighFollowers DESC
+LIMIT 10;
+
+-- Songs with highest streams
+SELECT "Streams", "Song Name", "Artist"
+from public."Spotify2020"
+order by "Streams" DESC
+LIMIT 10;
+
+
+
+
+
 
