@@ -255,6 +255,19 @@ order by "Streams" DESC
 LIMIT 10;
 
 
+-- 
+SELECT "Artist", "Song Name", "Streams"
+	,AVG("Streams") OVER(PARTITION BY "Artist" 
+						 ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING )
+						 AS AverageStreams
+from public."Spotify2020"
+WHERE "Artist" IN (
+	SELECT "Artist" from public."Spotify2020"
+	GROUP BY "Artist"
+	ORDER BY SUM("Streams") DESC
+	LIMIT 10
+)
+ORDER BY AverageStreams DESC, "Streams" DESC,  "Artist" ASC, "Song Name";
 
 
 
